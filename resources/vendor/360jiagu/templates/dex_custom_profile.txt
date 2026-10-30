@@ -1,0 +1,13 @@
+************ 1、定制类加壳。使用时将本行以及注释全部删除 **************
+// 将butterknife包下面的进行加壳
+butterknife.*
+// 对指定类进行定制加壳
+retrofit2.Retrofit
+
+
+************ 2、反向定制类加壳。使用时将本行以及注释全部删除 **************
+// 将butterknife包下面的进行过滤不加壳
+butterknife.*
+// 对指定类进行过滤不加壳
+retrofit2.Retrofit
+customClassesType=True
