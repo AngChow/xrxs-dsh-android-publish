@@ -1,0 +1,19 @@
+-skip class butterknife.**
+
+-skip class org.greenrobot.eventbus.**
+
+-skip class retrofit2.**
+
+-skip class com.google.**
+
+-skip class com.squareup.picasso.**
+
+-skip class com.bumptech.glide.**
+
+-skip class io.reactivex.**
+
+-skip class okhttp3.**
+
+-skip class anroidx.**
+
+-skip class com.facebook.**

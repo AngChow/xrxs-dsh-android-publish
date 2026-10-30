@@ -1,0 +1,65 @@
+{
+  "name": "xrxs-dsh-android-publish",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DSH plugin: safe Android release packaging and store submission (YYB/Xiaomi/Huawei/OPPO/vivo) with credential redaction and human approval",
+  "license": "MIT",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/types/**/*.d.ts",
+    "cordis.patch.yml",
+    "README.md",
+    "resources/**/*"
+  ],
+  "engines": {
+    "dsh": ">=0.2.2-alpha.2 <0.3.0"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepare": "pnpm run build"
+  },
+  "dsh": {
+    "bundle": {
+      "platforms": [
+        "darwin"
+      ],
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=4.0.5-alpha.1",
+    "@deepseek-ai/dsh-credentials": ">=0.2.2-alpha.2 <0.3.0",
+    "@deepseek-ai/dsh-jobs": ">=0.2.2-alpha.2 <0.3.0",
+    "@deepseek-ai/dsh-subprocess": ">=0.2.2-alpha.2 <0.3.0",
+    "@deepseek-ai/dsh-system-prompt": ">=0.2.2-alpha.2 <0.3.0",
+    "@deepseek-ai/dsh-tools": ">=0.2.2-alpha.2 <0.3.0",
+    "@deepseek-ai/dsh-user-questions": ">=0.2.2-alpha.2 <0.3.0",
+    "@deepseek-ai/schemastery": ">=3.18.5"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.6-alpha.1",
+    "@deepseek-ai/dsh-credentials": "0.2.2-alpha.2",
+    "@deepseek-ai/dsh-jobs": "0.2.2-alpha.2",
+    "@deepseek-ai/dsh-subprocess": "0.2.2-alpha.2",
+    "@deepseek-ai/dsh-system-prompt": "0.2.2-alpha.2",
+    "@deepseek-ai/dsh-tools": "0.2.2-alpha.2",
+    "@deepseek-ai/dsh-user-questions": "0.2.2-alpha.2",
+    "@deepseek-ai/schemastery": "3.18.6-alpha.1",
+    "@types/node": "^22.20.1",
+    "tsdown": "^0.22.2",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  }
+}

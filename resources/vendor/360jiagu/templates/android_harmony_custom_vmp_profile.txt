@@ -1,0 +1,23 @@
+*********使用时请把本行以及注释删除掉*********
+//给指定类下,指定方法进行vmp处理
+-vmp class com.test.main {
+	private static char a(int);
+	public static java.lang.String a(char,java.lang.String);
+}
+
+
+//给指定类下全部方法进行vmp处理
+-vmp class com.test.main {
+	*;
+}
+
+
+//给指定包下的所有类的方法做vmp处理
+-vmp class com.test.* {
+	*;
+}
+
+//整个apk做vmp处理
+-vmp class * {
+	*;
+}

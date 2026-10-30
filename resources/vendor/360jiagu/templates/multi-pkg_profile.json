@@ -1,0 +1,28 @@
+{
+  "data": {
+    "config_name1": {
+      "store_name": "",
+      "file_name": "",
+      "channel1": {
+        "name": "",
+        "key": ""
+      },
+      "channel2": {
+        "name": "",
+        "key": ""
+      }
+    },
+    "config_name2": {
+      "store_name": "",
+      "file_name": "",
+      "channel1": {
+        "name": "",
+        "key": ""
+      },
+      "channel2": {
+        "name": "",
+        "key": ""
+      }
+    }
+  }
+}

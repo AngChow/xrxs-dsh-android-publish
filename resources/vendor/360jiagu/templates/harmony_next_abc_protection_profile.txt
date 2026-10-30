@@ -1,0 +1,11 @@
+// 1. 跳过指定类不做处理
+Lcom.example.main/entry/ets/entryability/EntryAbility;
+
+// 2. 跳过包下所有类不做处理
+Lcom.example.main/entry/ets/entryability
+
+// 3. 跳过指定类和包下所有类不做处理
+Lcom.example.main/entry/ets/entryability/EntryAbility;
+Lcom.example.main/entry/ets/entryability
+
+################## 请在使用之前删除上述示例 ##################
