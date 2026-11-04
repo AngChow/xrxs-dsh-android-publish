@@ -30,20 +30,20 @@ export function registerStartTool(runtime: PluginRuntime) {
   return defineTool({
     name: 'android_publish_start',
     description:
-      'Start a package-only or production Android release as a background job. Production submission requires a successful preflight and explicit human approval; on refusal nothing starts.',
+      '以后台任务方式启动打包或生产提审。生产提审要求预检通过并获得人工明确批准；若拒绝则不会启动任何操作。',
     parameters: {
-      profileId: { type: 'string', required: true, description: 'Release profile id.' },
+      profileId: { type: 'string', required: true, description: '发布 profile id。' },
       stores: {
         type: 'array',
         required: true,
         items: { type: 'string', enum: STORES },
-        description: 'Explicit target stores; "all" is never allowed.',
+        description: '显式指定目标商店；不允许使用 "all"。',
       },
-      updateDesc: { type: 'string', required: true, description: 'Release notes (1-300 chars).' },
-      onlineTime: { type: 'string', description: 'Optional scheduled publish time, YYYY-MM-DD HH:MM:SS, Asia/Shanghai.' },
-      hardenedApkPath: { type: 'string', description: 'Optional absolute path to an already-hardened APK under projectRoot.' },
-      mode: { type: 'string', required: true, enum: ['packageOnly', 'submit'], description: 'packageOnly = dry-run; submit = production submission.' },
-      acknowledgeSlowOperation: { type: 'boolean', description: 'Advisory acknowledgement of a slow operation; never bypasses approval.' },
+      updateDesc: { type: 'string', required: true, description: '更新说明（1-300 字）。' },
+      onlineTime: { type: 'string', description: '可选，定时上架时间，格式 YYYY-MM-DD HH:MM:SS，时区 Asia/Shanghai。' },
+      hardenedApkPath: { type: 'string', description: '可选，已加固 APK 的绝对路径；必须位于 projectRoot 之下。' },
+      mode: { type: 'string', required: true, enum: ['packageOnly', 'submit'], description: 'packageOnly = 仅打包（dry-run）；submit = 生产提审。' },
+      acknowledgeSlowOperation: { type: 'boolean', description: '对耗时操作的确认项；不会绕过审批。' },
     },
     output: {
       schema: { type: 'object', additionalProperties: true },

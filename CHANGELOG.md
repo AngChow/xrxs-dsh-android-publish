@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.2
+
+用户可见文案中文化，**无任何行为变更**：
+
+- 新增 `locale/zh.json`、`locale/en.json`（`meta.title` / `meta.description`），
+  插件页按 DSH 当前语言显示中文标题与描述。
+- 5 个工具的描述与参数说明改为中文（工具名、参数名、枚举值保持不变）。
+- `doctor` / `plan` 输出的问题与警告文案改为中文。
+- `systemPrompt` 段落改用中文表述。
+- 底层校验报错（`config.ts` / `request.ts`）暂保留英文，因其被测试以正则断言。
+
 ## 0.1.1
 
 ### 兼容性

@@ -20,17 +20,17 @@ export function registerDoctorTool(runtime: PluginRuntime) {
   return defineTool({
     name: 'android_publish_doctor',
     description:
-      'Check Python, Python dependencies, Java, Gradle wrapper, Android build tools, and configured credential references for an Android publish profile. Returns configuration state only; never credential values.',
+      '检查 Android 发布环境：Python 及依赖、Java、Gradle wrapper、Android 构建工具，以及各商店凭据 ref 的配置状态。只返回配置状态，绝不返回凭据值。',
     parameters: {
-      profileId: { type: 'string', required: true, description: 'Release profile id.' },
+      profileId: { type: 'string', required: true, description: '发布 profile id。' },
       stores: {
         type: 'array',
         items: { type: 'string', enum: STORES },
-        description: 'Optional store subset to report credentials for; defaults to all configured stores.',
+        description: '可选，仅检查这些商店的凭据；默认检查该 profile 配置的全部商店。',
       },
       networkProbe: {
         type: 'boolean',
-        description: 'Run pre_check.py against store APIs. Defaults to false; consumes store API quota.',
+        description: '是否调用 pre_check.py 请求商店接口。默认 false，会消耗商店 API 配额。',
       },
     },
     output: {
@@ -58,7 +58,7 @@ export function registerDoctorTool(runtime: PluginRuntime) {
 
       // Gradle wrapper.
       const gradleOk = existsSync(path.join(projectRoot, 'gradlew'))
-      if (!gradleOk) issues.push(`gradlew not found under ${projectRoot}`)
+      if (!gradleOk) issues.push(`未在 ${projectRoot} 下找到 gradlew`)
 
       // Python.
       const py = await runQuick(ctx, [runtime.config.pythonExecutable, '--version'], spawnOpts)
@@ -66,13 +66,13 @@ export function registerDoctorTool(runtime: PluginRuntime) {
       const deps = await runQuick(ctx, [runtime.config.pythonExecutable, '-c',
         'import requests, Crypto, cryptography; print("python-deps-ok")'], spawnOpts)
       const depsOk = deps.exitCode === 0 && deps.stdout.includes('python-deps-ok')
-      if (py.exitCode !== 0) issues.push(`python3 not runnable: ${pythonVersion}`)
-      if (!depsOk) issues.push('python deps missing: requests / pycryptodome / cryptography (see resources/requirements.txt)')
+      if (py.exitCode !== 0) issues.push(`python3 无法运行：${pythonVersion}`)
+      if (!depsOk) issues.push('缺少 Python 依赖：requests / pycryptodome / cryptography（见 resources/requirements.txt）')
 
       // Java.
       const java = await runQuick(ctx, ['java', '-version'], spawnOpts)
       const javaOk = java.exitCode === 0
-      if (!javaOk) warnings.push('java not found on PATH; Gradle builds will fail unless JAVA_HOME is configured')
+      if (!javaOk) warnings.push('PATH 中找不到 java；除非配置 JAVA_HOME，否则 Gradle 构建会失败')
 
       // Android build tools.
       let buildToolsOk = false
@@ -80,9 +80,9 @@ export function registerDoctorTool(runtime: PluginRuntime) {
       if (btDir) {
         buildToolsOk = ['aapt', 'zipalign', 'apksigner'].every(bin =>
           existsSync(path.join(btDir, bin)) || existsSync(path.join(btDir, `${bin}.exe`)))
-        if (!buildToolsOk) warnings.push(`ANDROID_BUILD_TOOLS (${btDir}) is missing aapt/zipalign/apksigner`)
+        if (!buildToolsOk) warnings.push(`ANDROID_BUILD_TOOLS（${btDir}）缺少 aapt/zipalign/apksigner`)
       } else {
-        warnings.push('ANDROID_BUILD_TOOLS not configured in plainEnv; zipalign/apksigner steps may fail')
+        warnings.push('plainEnv 中未配置 ANDROID_BUILD_TOOLS；zipalign/apksigner 步骤可能失败')
       }
 
       // Credential state (describe only; never resolve for doctor).
@@ -113,14 +113,14 @@ export function registerDoctorTool(runtime: PluginRuntime) {
           requiredForSelection: requiredKeys.has(envKey),
         })
         if (requiredKeys.has(envKey) && !info.configured) {
-          issues.push(`required credential ${envKey} (ref ${refName ?? '?'}) is not configured`)
+          issues.push(`必需凭据 ${envKey}（ref ${refName ?? '?'}）未配置`)
         }
       }
 
       // Path checks for path-like plainEnv values.
       for (const [key, value] of Object.entries(profile.plainEnv)) {
         if (!PATH_LIKE_ENV_KEYS.has(key)) continue
-        if (!existsSync(value)) warnings.push(`${key} path does not exist: ${value}`)
+        if (!existsSync(value)) warnings.push(`${key} 路径不存在：${value}`)
       }
 
       // Optional network probe: real pre_check.py through the runner.

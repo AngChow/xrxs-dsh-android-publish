@@ -14,19 +14,19 @@ export function registerPlanTool(runtime: PluginRuntime) {
   return defineTool({
     name: 'android_publish_plan',
     description:
-      'Build a deterministic release plan for Android packaging or production submission. Validates profile policy, stores, paths, and credential configuration. Does not execute anything.',
+      '为 Android 打包或生产提审生成确定性的发布计划。会校验 profile 策略、渠道、路径与凭据配置，但不执行任何操作。',
     parameters: {
-      profileId: { type: 'string', required: true, description: 'Release profile id.' },
+      profileId: { type: 'string', required: true, description: '发布 profile id。' },
       stores: {
         type: 'array',
         required: true,
         items: { type: 'string', enum: STORES },
-        description: 'Explicit target stores; "all" is never allowed.',
+        description: '显式指定目标商店；不允许使用 "all"。',
       },
-      updateDesc: { type: 'string', required: true, description: 'Release notes (1-300 chars).' },
-      onlineTime: { type: 'string', description: 'Optional scheduled publish time, YYYY-MM-DD HH:MM:SS, Asia/Shanghai. Huawei does not support it.' },
-      hardenedApkPath: { type: 'string', description: 'Optional absolute path to an already-hardened APK; must be under projectRoot.' },
-      mode: { type: 'string', required: true, enum: ['packageOnly', 'submit'], description: 'packageOnly = dry-run packaging; submit = production submission (requires profile policy).' },
+      updateDesc: { type: 'string', required: true, description: '更新说明（1-300 字）。' },
+      onlineTime: { type: 'string', description: '可选，定时上架时间，格式 YYYY-MM-DD HH:MM:SS，时区 Asia/Shanghai。华为不支持该参数。' },
+      hardenedApkPath: { type: 'string', description: '可选，已加固 APK 的绝对路径；必须位于 projectRoot 之下。' },
+      mode: { type: 'string', required: true, enum: ['packageOnly', 'submit'], description: 'packageOnly = 仅打包（dry-run）；submit = 生产提审（需 profile 策略允许）。' },
     },
     output: {
       schema: { type: 'object', additionalProperties: true },
@@ -52,16 +52,16 @@ export function registerPlanTool(runtime: PluginRuntime) {
 
       const warnings: string[] = []
       if (request.onlineTime && request.stores.includes('huawei')) {
-        warnings.push('Huawei does not support API scheduled online time; set it manually in AGC console.')
+        warnings.push('华为不支持通过 API 定时上架；请在 AGC 控制台手动设置上架时间。')
       }
       if (request.mode === 'packageOnly') {
         const skipped = packageOnlySkippedStores(request.stores)
         if (skipped.length) {
-          warnings.push(`${skipped.join(', ')} cannot dry-run; they will be skipped in packageOnly mode (only YingYongBao uploads without submitting).`)
+          warnings.push(`${skipped.join(', ')} 不支持 dry-run；packageOnly 模式下会跳过（只有应用宝支持只上传不提审）。`)
         }
       }
       if (request.profile.hardeningMode === 'optional' && request.willHarden) {
-        warnings.push('hardeningMode=optional: hardening runs only when JIAGU_* credentials and JIAGU_HOME are configured.')
+        warnings.push('hardeningMode=optional：仅当 JIAGU_* 凭据与 JIAGU_HOME 都配置时才执行加固。')
       }
 
       // Credential preview: configured state only, never values.

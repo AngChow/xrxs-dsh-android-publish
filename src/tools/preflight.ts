@@ -21,14 +21,14 @@ export function registerPreflightTool(runtime: PluginRuntime) {
   return defineTool({
     name: 'android_publish_preflight',
     description:
-      'Run signing/version preflight checks (pre_check.py) for the selected stores with resolved credentials. Never builds or submits. Output is redacted and bounded.',
+      '用已解析的凭据，对选定商店执行签名与版本号预检（pre_check.py）。不打包、不提审；输出经脱敏并限长。',
     parameters: {
-      profileId: { type: 'string', required: true, description: 'Release profile id.' },
+      profileId: { type: 'string', required: true, description: '发布 profile id。' },
       stores: {
         type: 'array',
         required: true,
         items: { type: 'string', enum: STORES },
-        description: 'Explicit target stores used to select which credentials are required.',
+        description: '显式指定目标商店，用于确定需要哪些凭据。',
       },
     },
     output: {

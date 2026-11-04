@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "安卓应用提审（五商店）",
+    "description": "打包 Android Release、上传 Bugly 符号表、可选 360 加固，并提审到应用宝 / 小米 / 华为 / OPPO / vivo。凭据保存在 DSH 凭据库，生产提审需人工审批。"
+  }
+}

@@ -12,11 +12,11 @@ export function registerStatusTool(runtime: PluginRuntime) {
   return defineTool({
     name: 'android_publish_status',
     description:
-      'Read non-consuming status and redacted output for an Android publish background job. Safe to call repeatedly.',
+      '读取 Android 发布后台任务的状态与脱敏输出。非消费式读取，可反复调用。',
     parameters: {
-      jobId: { type: 'string', required: true, description: 'Job id returned by android_publish_start.' },
-      fromByte: { type: 'integer', description: 'Output stream offset to resume from; defaults to 0.' },
-      maxBytes: { type: 'integer', description: 'Maximum output bytes to return; bounded by plugin outputMaxBytes.' },
+      jobId: { type: 'string', required: true, description: 'android_publish_start 返回的任务 id。' },
+      fromByte: { type: 'integer', description: '输出流读取偏移量；默认 0。' },
+      maxBytes: { type: 'integer', description: '本次最多返回的字节数；受插件 outputMaxBytes 限制。' },
     },
     output: {
       schema: { type: 'object', additionalProperties: true },

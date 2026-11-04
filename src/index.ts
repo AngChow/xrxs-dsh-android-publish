@@ -41,10 +41,10 @@ export function apply(ctx: Context, rawConfig: ConfigShape): void {
     name: 'tool:xrxs-android-publish',
     order: 130,
     text: [
-      'For Android packaging or store submission, use xrxs Android publish tools.',
-      'Never ask the user to paste store keys or signing passwords into chat.',
-      'Run android_publish_doctor or android_publish_preflight before submit.',
-      'Production submission always shows a full plan and requires explicit user approval through the plugin.',
+      'Android 打包或商店提审请使用 xrxs Android publish 工具。',
+      '绝不要让用户在对话中粘贴商店密钥或签名密码。',
+      '提审前先执行 android_publish_doctor 或 android_publish_preflight。',
+      '生产提审必须展示完整计划，并通过插件弹出的审批卡片获得用户明确同意。',
     ].join(' '),
   })
 

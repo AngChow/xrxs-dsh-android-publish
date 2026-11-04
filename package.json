@@ -1,8 +1,8 @@
 {
   "name": "xrxs-dsh-android-publish",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
-  "description": "DSH plugin: safe Android release packaging and store submission (YYB/Xiaomi/Huawei/OPPO/vivo) with credential redaction and human approval",
+  "description": "DSH 插件：以安全、可审计的方式执行 Android 打包与商店提审（应用宝 / 小米 / 华为 / OPPO / vivo），凭据全程脱敏并强制人工审批",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,6 +34,7 @@
     "lib/types/**/*.d.ts",
     "cordis.patch.yml",
     "README.md",
+    "locale/*.json",
     "resources/scripts/**/*",
     "resources/python/**/*",
     "resources/vendor/**/*",

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Android Store Publish",
+    "description": "Build an Android release, upload Bugly symbols, optionally harden with 360 Jiagu, and submit to YingYongBao / Xiaomi / Huawei / OPPO / vivo. Credentials stay in the DSH store; production submission needs explicit approval."
+  }
+}
