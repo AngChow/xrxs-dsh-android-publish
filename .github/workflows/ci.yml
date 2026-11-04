@@ -8,7 +8,10 @@ on:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    # macOS is required, not a preference: store submission is Darwin-only
+    # (see src/request.ts: production submit throws off-darwin), so the submit
+    # path is only exercised here.
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
