@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.3
+
+修复插件页仍显示英文包名的问题，**无任何行为变更**：
+
+- `package.json` 补上 `"./locale/*.json"` 导出。0.1.2 加入的 `locale/zh.json` 因未出现在
+  `exports` 中，宿主读不到 `meta.title`，插件页一直回退到包名 `xrxs-dsh-android-publish`；
+  现在按 DSH 语言显示「安卓应用提审（五商店）」。
+- 新增 `"./icon"` 导出与 `icon.svg`（Android 绿底：包裹 + 上传箭头 + 审批勾），
+  便于和「鸿蒙应用提审 (AGC)」在插件页用颜色区分。
+- `types` 及 `.` 导出的 types 由不存在的 `lib/types/index.d.ts` 改为实际产物 `lib/index.d.ts`。
+
 ## 0.1.2
 
 用户可见文案中文化，**无任何行为变更**：
