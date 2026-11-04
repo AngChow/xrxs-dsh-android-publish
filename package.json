@@ -1,9 +1,24 @@
 {
   "name": "xrxs-dsh-android-publish",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "DSH plugin: safe Android release packaging and store submission (YYB/Xiaomi/Huawei/OPPO/vivo) with credential redaction and human approval",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AngChow/xrxs-dsh-android-publish.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AngChow/xrxs-dsh-android-publish/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "android",
+    "apk",
+    "app-store",
+    "release"
+  ],
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",

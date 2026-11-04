@@ -2,3 +2,6 @@ node_modules/
 lib/
 *.tgz
 dist/
+.DS_Store
+*.log
+coverage/

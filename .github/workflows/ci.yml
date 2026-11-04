@@ -1,0 +1,51 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Verify packed artifact declares no runtime dependencies
+        run: |
+          pnpm pack --pack-destination /tmp/pack
+          T=$(ls /tmp/pack/*.tgz | head -1)
+          node -e '
+            const { execSync } = require("node:child_process");
+            const out = execSync(`tar -xzOf ${process.argv[1]} package/package.json`).toString();
+            const pkg = JSON.parse(out);
+            const deps = pkg.dependencies ?? {};
+            const unwanted = Object.keys(deps).filter((d) => d.startsWith("@deepseek-ai/"));
+            if (unwanted.length > 0) {
+              console.error("FATAL: @deepseek-ai packages must not be runtime dependencies:", unwanted);
+              process.exit(1);
+            }
+            console.log("ok: no @deepseek-ai runtime dependencies");
+          ' "$T"
