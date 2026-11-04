@@ -1,8 +1,8 @@
 {
   "name": "xrxs-dsh-android-publish",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "private": true,
-  "description": "DSH \u63d2\u4ef6\uff1a\u4ee5\u5b89\u5168\u3001\u53ef\u5ba1\u8ba1\u7684\u65b9\u5f0f\u6267\u884c Android \u6253\u5305\u4e0e\u5546\u5e97\u63d0\u5ba1\uff08\u5e94\u7528\u5b9d / \u5c0f\u7c73 / \u534e\u4e3a / OPPO / vivo\uff09\uff0c\u51ed\u636e\u5168\u7a0b\u8131\u654f\u5e76\u5f3a\u5236\u4eba\u5de5\u5ba1\u6279",
+  "description": "DSH 插件：以安全、可审计的方式执行 Android 打包与商店提审（应用宝 / 小米 / 华为 / OPPO / vivo），凭据全程脱敏并强制人工审批",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -29,10 +29,12 @@
     },
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./client": "./lib/client.js"
   },
   "files": [
     "lib/index.js",
+    "lib/client.js",
     "lib/types/**/*.d.ts",
     "cordis.patch.yml",
     "README.md",
@@ -47,10 +49,11 @@
     "dsh": ">=0.2.1-rc.5 <0.3.0"
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsdown && node scripts/build-client.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "prepare": "pnpm run build"
+    "prepare": "pnpm run build",
+    "build:client": "node scripts/build-client.mjs"
   },
   "dsh": {
     "bundle": {
@@ -58,6 +61,13 @@
         "darwin"
       ],
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-tool"
+      ]
     }
   },
   "peerDependencies": {
@@ -82,6 +92,7 @@
     "@types/node": "^22.20.1",
     "tsdown": "^0.22.2",
     "typescript": "^5.6.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0",
+    "esbuild": "^0.25.10"
   }
 }

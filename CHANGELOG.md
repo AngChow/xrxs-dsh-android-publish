@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.2.0
+
+发布卡片与审批体验升级（Host 半身重做 + 新增 Web 客户端半身）：
+
+- 新增客户端半身：`package.json` 声明 `dsh.client`（`platform: web`）与 `./client` 导出；
+  `lib/client.js` 由 `scripts/build-client.mjs`（esbuild）生成，为 5 个工具各注册一个
+  `tool.call.toolview` 视图。
+- 卡片数据改走 `output.presentationMeta` 的结构化 meta 通道（客户端读 `block.meta`）；
+  模型可见文本由 `renderCardText()` 生成，不再回显整段 JSON。
+- 修复审批卡片与审计/任务使用不同 planId 的问题：`planId` 只生成一次，贯穿审批卡片、
+  `approval_denied`、`start` 审计与任务标签。
+- 修复在审批卡片上取消/关闭时抛 `ASK_CANCELLED` 的问题：现在返回
+  `{ ok: true, approved: false, reason: 'user_cancelled' }` 并写 `approval_denied` 审计，
+  不启动任何任务。
+- 审批卡片标题改为人类可读（`# 生产提审：<应用> → <渠道>`），不再以「方案 ID: ap-…」开头。
+- `android_publish_status` 解析 `@@ANDROID_PUBLISH_PROGRESS/RESULT@@` 标记，卡片展示当前步骤、
+  分渠道结果与输出尾部；后台任务标签包含模式、应用与目标渠道。
+- 新增测试：客户端 bundle 加载与 5 个视图注册、卡片文本、标记解析、工具契约。
+
 ## 0.1.3
 
 修复插件页仍显示英文包名的问题，**无任何行为变更**：

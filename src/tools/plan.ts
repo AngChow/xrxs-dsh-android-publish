@@ -5,6 +5,13 @@
  */
 
 import { defineTool } from '@deepseek-ai/dsh-tools'
+import {
+  modeLabel,
+  planSteps,
+  renderCardText,
+  storeNames,
+  type ReleaseCard,
+} from '../card.ts'
 import { normalizeRequest, newPlanId, packageOnlySkippedStores, packageNames } from '../request.ts'
 import type { PluginRuntime } from '../runtime.ts'
 
@@ -32,8 +39,9 @@ export function registerPlanTool(runtime: PluginRuntime) {
       schema: { type: 'object', additionalProperties: true },
       render: (_args, value) => [{
         type: 'text',
-        text: JSON.stringify(value, null, 2),
+        text: renderCardText((value as unknown as { card: ReleaseCard }).card),
       }],
+      presentationMeta: (_args, value) => (value as unknown as { card: ReleaseCard }).card,
     },
     presentCall: args => ({
       card: 'generic' as const,
@@ -49,6 +57,8 @@ export function registerPlanTool(runtime: PluginRuntime) {
         hardenedApkPath: args.hardenedApkPath,
         mode: args.mode as never,
       })
+      const planId = newPlanId()
+      const channels = storeNames(request.stores)
 
       const warnings: string[] = []
       if (request.onlineTime && request.stores.includes('huawei')) {
@@ -57,7 +67,7 @@ export function registerPlanTool(runtime: PluginRuntime) {
       if (request.mode === 'packageOnly') {
         const skipped = packageOnlySkippedStores(request.stores)
         if (skipped.length) {
-          warnings.push(`${skipped.join(', ')} 不支持 dry-run；packageOnly 模式下会跳过（只有应用宝支持只上传不提审）。`)
+          warnings.push(`${storeNames(skipped)} 不支持 dry-run；packageOnly 模式下会跳过（只有应用宝支持只上传不提审）。`)
         }
       }
       if (request.profile.hardeningMode === 'optional' && request.willHarden) {
@@ -67,10 +77,34 @@ export function registerPlanTool(runtime: PluginRuntime) {
       // Credential preview: configured state only, never values.
       const { describeCredentialPreview } = await import('../env.ts')
       const preview = await describeCredentialPreview(runtime.ctx, request.profile)
+      const configured = preview.filter(item => item.configured).length
+
+      const card: ReleaseCard = {
+        v: 1,
+        title: 'Android 发布计划',
+        subtitle: `${request.profile.displayName} · ${modeLabel(request.mode)} · ${channels}`,
+        state: warnings.length ? 'warn' : 'info',
+        badge: '仅计划',
+        facts: [
+          { label: '方案 ID', value: planId },
+          { label: '项目根目录', value: request.projectRoot },
+          { label: '更新文案', value: request.updateDesc },
+          { label: '定时上架', value: request.onlineTime ?? '无' },
+          { label: '外部加固包', value: request.hardenedApkPath ?? '无（走 360 加固）' },
+          { label: '凭据', value: `${String(configured)} / ${String(preview.length)} 已配置` },
+          ...Object.entries(packageNames(request)).map(([id, name]) => ({
+            label: `${storeNames([id])} 包名`,
+            value: name,
+          })),
+        ],
+        steps: planSteps(request),
+        warnings,
+        notes: ['这是计划，不会执行任何操作；确认后调用 android_publish_start。'],
+      }
 
       return {
         ok: true,
-        planId: newPlanId(),
+        planId,
         profileId: request.profile.id,
         projectRoot: request.projectRoot,
         mode: request.mode,
@@ -85,6 +119,7 @@ export function registerPlanTool(runtime: PluginRuntime) {
         willGitTag: request.willGitTag,
         warnings,
         credentialPreview: preview,
+        card,
       }
     },
   })

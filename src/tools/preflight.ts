@@ -6,6 +6,7 @@
 
 import path from 'node:path'
 import { defineTool } from '@deepseek-ai/dsh-tools'
+import { renderCardText, storeNames, tail, type ReleaseCard } from '../card.ts'
 import { getProfile } from '../config.ts'
 import { resolveEnv, secretEnvKeys } from '../env.ts'
 import { createRedactor } from '../redact.ts'
@@ -35,8 +36,9 @@ export function registerPreflightTool(runtime: PluginRuntime) {
       schema: { type: 'object', additionalProperties: true },
       render: (_args, value) => [{
         type: 'text',
-        text: JSON.stringify(value, null, 2),
+        text: renderCardText((value as unknown as { card: ReleaseCard }).card),
       }],
+      presentationMeta: (_args, value) => (value as unknown as { card: ReleaseCard }).card,
     },
     presentCall: args => ({
       card: 'generic' as const,
@@ -82,13 +84,33 @@ export function registerPreflightTool(runtime: PluginRuntime) {
       }
 
       const ok = result.exitCode === 0
+      const issues = ok ? [] : [`preflight exited with code ${String(result.exitCode)}`]
+      const card: ReleaseCard = {
+        v: 1,
+        title: 'Android 发布预检',
+        subtitle: `${profile.displayName} · ${storeNames(args.stores)}`,
+        state: ok ? 'ok' : 'failed',
+        badge: ok ? '预检通过' : `失败 (exit ${String(result.exitCode)})`,
+        facts: [
+          { label: 'Profile', value: profile.displayName },
+          { label: '目标渠道', value: storeNames(args.stores) },
+          { label: 'Exit code', value: String(result.exitCode) },
+          { label: '耗时', value: `${(result.durationMs / 1000).toFixed(1)} 秒` },
+          { label: '项目根目录', value: projectRoot },
+        ],
+        warnings: resolution.warnings,
+        ...(result.outputTail.trim() ? { outputTail: tail(result.outputTail, 2500) } : {}),
+        ...(ok ? {} : { notes: ['预检未通过时不会请求审批，也不会启动打包。'] }),
+      }
+
       return {
         ok,
         exitCode: result.exitCode,
         durationMs: result.durationMs,
         outputTail: result.outputTail,
-        issues: ok ? [] : [`preflight exited with code ${result.exitCode}`],
+        issues,
         warnings: resolution.warnings,
+        card,
       }
     },
   })

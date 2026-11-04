@@ -27,8 +27,8 @@ export const scriptsDir = fileURLToPath(
   new URL('../resources/scripts', import.meta.url),
 )
 
-const RESULT_PREFIX = '@@ANDROID_PUBLISH_RESULT@@ '
-const PROGRESS_PREFIX = '@@ANDROID_PUBLISH_PROGRESS@@ '
+export const RESULT_PREFIX = '@@ANDROID_PUBLISH_RESULT@@ '
+export const PROGRESS_PREFIX = '@@ANDROID_PUBLISH_PROGRESS@@ '
 
 export interface RunnerResult {
   readonly exitCode: number

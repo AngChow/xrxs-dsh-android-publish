@@ -28,6 +28,19 @@ DeepSeek Harness (DSH) 插件：把 `android-publish` Codex skill 的 Android �
 | `android_publish_start` | 启动打包或提审后台任务；生产模式走审批卡片 |
 | `android_publish_status` | 非消费式读取任务状态与脱敏输出 |
 
+## 界面（DSH Web 客户端）
+
+插件带一个客户端半身（`dsh.client` + `lib/client.js`），在桌面端/Web 端把 5 个工具渲染成发布卡片：
+
+- 标题 + 状态徽标（运行中 / 通过 / 失败 / 已取消），一行摘要带 profile 与目标渠道；
+- 展开后是事实表、流程步骤、分渠道结果、警告与输出尾部；
+- 卡片数据走 `output.presentationMeta` 的结构化通道（客户端读 `block.meta`），不解析模型可见文本；
+  旧会话里没有 meta 时回退展示原文本。
+- 客户端包只依赖宿主提供的 `react`，不引用任何 `@deepseek-ai/dsh-client-*` 包。
+- 升级宿主版本后需要重新 `pnpm build`，重新生成 `lib/client.js`。
+
+审批卡片仍由宿主 `userQuestions` 渲染（`plan-review`），插件只负责标题与正文。
+
 ## 安装
 
 `lib/` 构建产物不入库。请从 [Releases](https://github.com/AngChow/xrxs-dsh-android-publish/releases) 下载 `xrxs-dsh-android-publish-<version>.tgz`，或自行构建：

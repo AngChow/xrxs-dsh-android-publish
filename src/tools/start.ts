@@ -8,6 +8,13 @@ import path from 'node:path'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import '@deepseek-ai/dsh-user-questions'
 import { appendAudit } from '../audit.ts'
+import {
+  modeLabel,
+  planSteps,
+  renderCardText,
+  storeNames,
+  type ReleaseCard,
+} from '../card.ts'
 import { resolveEnv, secretEnvKeys } from '../env.ts'
 import { createRedactor } from '../redact.ts'
 import { runThroughRunner, startRunnerJob } from '../runner.ts'
@@ -25,6 +32,9 @@ const STORES = ['yyb', 'xiaomi', 'huawei', 'oppo', 'vivo'] as const
 const APPROVE_LABEL = '确认提交生产'
 const PROCEED_LABEL = '确认执行'
 const REJECT_LABEL = '取消'
+
+/** Question rejections that mean the human declined, not a broken tool. */
+const DECLINED_CODES = new Set(['ASK_CANCELLED', 'ASK_ABORTED', 'ASK_TIMED_OUT'])
 
 export function registerStartTool(runtime: PluginRuntime) {
   return defineTool({
@@ -49,13 +59,14 @@ export function registerStartTool(runtime: PluginRuntime) {
       schema: { type: 'object', additionalProperties: true },
       render: (_args, value) => [{
         type: 'text',
-        text: JSON.stringify(value, null, 2),
+        text: renderCardText((value as unknown as { card: ReleaseCard }).card),
       }],
+      presentationMeta: (_args, value) => (value as unknown as { card: ReleaseCard }).card,
     },
     presentCall: args => ({
       card: 'generic' as const,
       title: `启动发布任务 (${String(args.profileId)}, ${String(args.mode)})`,
-      kind: 'other' as const,
+      kind: 'execute' as const,
     }),
     async execute(args, exec) {
       const { ctx, config } = runtime
@@ -70,6 +81,7 @@ export function registerStartTool(runtime: PluginRuntime) {
       const profile = request.profile
       const auditDir = runtimeDirFor(runtime, profile)
       const planId = newPlanId()
+      const channels = storeNames(request.stores)
 
       // Active-run lock keyed by canonical projectRoot.
       if (runtime.activeRuns.has(request.projectRoot)) {
@@ -128,28 +140,38 @@ export function registerStartTool(runtime: PluginRuntime) {
       const isSubmit = request.mode === 'submit'
       const approveLabel = isSubmit ? APPROVE_LABEL : PROCEED_LABEL
       if (!exec.agent) toolError('no agent context available to ask the user for approval')
-      const answer = await ctx.userQuestions.ask({
-        agent: exec.agent,
-        signal: exec.signal,
-        questions: [{
-          id: 'production-submit',
-          header: isSubmit ? '生产发布确认' : '打包任务确认',
-          question: isSubmit
-            ? '确认将当前构建提交到生产应用市场吗？'
-            : '确认开始打包任务吗？（应用宝 dry-run 会上传但不提审）',
-          detail: renderMarkdownPlan(request, warnings),
-          options: [{ label: approveLabel }, { label: REJECT_LABEL }],
-          // `plan-review` is the only intent kind understood by both 0.2.1-rc.5 and
-          // 0.2.2-alpha.2 (`approval` was introduced in 0.2.2). The verdict stays
-          // fail-closed either way: only the approve label grants, everything else
-          // (including no selection) is treated as a refusal.
-          intent: isSubmit
-            ? { kind: 'plan-review', approve: approveLabel }
-            : undefined,
-        }],
-      })
-      const approved = answer.answers[0]?.selected.includes(approveLabel) === true
-      if (!approved) {
+
+      let declinedReason: string | null = null
+      try {
+        const answer = await ctx.userQuestions.ask({
+          agent: exec.agent,
+          signal: exec.signal,
+          questions: [{
+            id: 'production-submit',
+            header: isSubmit ? '生产发布确认' : '打包任务确认',
+            question: isSubmit
+              ? '确认将当前构建提交到生产应用市场吗？'
+              : '确认开始打包任务吗？（应用宝 dry-run 会上传但不提审）',
+            detail: renderMarkdownPlan(request, warnings, planId),
+            options: [{ label: approveLabel }, { label: REJECT_LABEL }],
+            // `plan-review` is the only intent kind understood by both 0.2.1-rc.5 and
+            // 0.2.2-alpha.2 (`approval` was introduced in 0.2.2). The verdict stays
+            // fail-closed either way: only the approve label grants, everything else
+            // (including no selection) is treated as a refusal.
+            intent: isSubmit
+              ? { kind: 'plan-review' as const, approve: approveLabel }
+              : undefined,
+          }],
+        })
+        const approved = answer.answers[0]?.selected.includes(approveLabel) === true
+        if (!approved) declinedReason = 'user_rejected'
+      } catch (error) {
+        const code = (error as { code?: unknown }).code
+        if (typeof code !== 'string' || !DECLINED_CODES.has(code)) throw error
+        declinedReason = 'user_cancelled'
+      }
+
+      if (declinedReason !== null) {
         if (config.auditEnabled) {
           void appendAudit(auditDir, {
             event: 'approval_denied',
@@ -160,7 +182,23 @@ export function registerStartTool(runtime: PluginRuntime) {
             mode: request.mode,
             stores: [...request.stores],
             approval: 'denied',
+            detail: declinedReason,
           })
+        }
+        const card: ReleaseCard = {
+          v: 1,
+          title: declinedReason === 'user_cancelled' ? '发布已取消' : '发布未执行',
+          subtitle: `${profile.displayName} · ${modeLabel(request.mode)} · ${channels}`,
+          state: 'warn',
+          badge: declinedReason === 'user_cancelled' ? '已取消' : '被拒绝',
+          facts: [
+            { label: 'Profile', value: profile.displayName },
+            { label: '模式', value: modeLabel(request.mode) },
+            { label: '目标渠道', value: channels },
+            { label: '方案 ID', value: planId },
+            { label: '原因', value: declinedReason === 'user_cancelled' ? '审批卡片被关闭或取消' : '用户选择了取消' },
+          ],
+          notes: ['没有启动任何打包或提审动作。'],
         }
         return {
           ok: true,
@@ -171,9 +209,10 @@ export function registerStartTool(runtime: PluginRuntime) {
           mode: request.mode,
           stores: [...request.stores],
           status: null,
-          reason: 'user_rejected',
+          reason: declinedReason,
           willGitTag: request.willGitTag,
           warnings,
+          card,
         }
       }
 
@@ -182,7 +221,7 @@ export function registerStartTool(runtime: PluginRuntime) {
       const jobId = startRunnerJob({
         ctx,
         owner: exec.agent?.id,
-        label: `Android ${request.mode}: ${profile.id} -> ${request.stores.join(', ')}`,
+        label: `Android ${modeLabel(request.mode)} · ${profile.displayName} → ${channels}`,
         redactor,
         spawn: {
           childArgv,
@@ -230,6 +269,27 @@ export function registerStartTool(runtime: PluginRuntime) {
         })
       }
 
+      const card: ReleaseCard = {
+        v: 1,
+        title: isSubmit ? 'Android 生产提审' : 'Android 打包',
+        subtitle: `${profile.displayName} · ${channels}`,
+        state: 'running',
+        badge: '已启动',
+        facts: [
+          { label: 'Profile', value: `${profile.displayName} (${profile.id})` },
+          { label: '模式', value: modeLabel(request.mode) },
+          { label: '目标渠道', value: channels },
+          { label: '方案 ID', value: planId },
+          { label: '任务 ID', value: jobId },
+          { label: '更新文案', value: request.updateDesc },
+          ...(request.onlineTime ? [{ label: '定时上架', value: request.onlineTime }] : []),
+          ...(request.hardenedApkPath ? [{ label: '外部加固包', value: request.hardenedApkPath }] : []),
+        ],
+        steps: planSteps(request),
+        warnings,
+        notes: ['实时日志在会话头部的「后台任务」面板；结果用 android_publish_status 读取。'],
+      }
+
       return {
         ok: true,
         approved: true,
@@ -242,6 +302,7 @@ export function registerStartTool(runtime: PluginRuntime) {
         reason: null,
         willGitTag: request.willGitTag,
         warnings,
+        card,
       }
     },
   })

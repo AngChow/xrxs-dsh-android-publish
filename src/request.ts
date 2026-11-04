@@ -15,6 +15,7 @@ import {
 } from './config.ts'
 import { canonicalize, isInside, requireAbsolute } from './paths.ts'
 import { requiredKeysFor } from './env.ts'
+import { storeName } from './card.ts'
 import { toolError, type PluginRuntime } from './runtime.ts'
 
 export type PublishMode = 'packageOnly' | 'submit'
@@ -195,9 +196,17 @@ export function buildChildArgv(request: PublishRequest): string[] {
 }
 
 /** Markdown rendering for the production approval card. */
-export function renderMarkdownPlan(request: PublishRequest, warnings: readonly string[]): string {
+export function renderMarkdownPlan(
+  request: PublishRequest,
+  warnings: readonly string[],
+  planId: string,
+): string {
+  const heading = request.mode === 'submit' ? '生产提审' : '打包（dry-run）'
+  const channels = request.stores.map(store => storeName(store)).join(' / ')
   const lines = [
-    `**方案 ID**: ${newPlanId()}`,
+    `# ${heading}：${request.profile.displayName} → ${channels}`,
+    '',
+    `**方案 ID**: ${planId}`,
     `**Profile**: ${request.profile.displayName} (${request.profile.id})`,
     `**项目根目录**: ${request.projectRoot}`,
     `**模式**: ${request.mode === 'submit' ? '生产提审' : '仅打包 (dry-run)'}`,

@@ -8,6 +8,14 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
+import {
+  renderCardText,
+  storeName,
+  type CardState,
+  type CardStepState,
+  type CardStore,
+  type ReleaseCard,
+} from '../card.ts'
 import { getProfile, PATH_LIKE_ENV_KEYS } from '../config.ts'
 import { profileCredentialKeys } from '../env.ts'
 import { runQuick } from '../runner.ts'
@@ -15,6 +23,18 @@ import { canonicalize } from '../paths.ts'
 import { toolError, type PluginRuntime } from '../runtime.ts'
 
 const STORES = ['yyb', 'xiaomi', 'huawei', 'oppo', 'vivo'] as const
+
+const STORE_REQUIRED: Record<string, string[]> = {
+  yyb: ['YYB_USER_ID', 'YYB_ACCESS_SECRET', 'YYB_APP_ID'],
+  xiaomi: ['MI_USER_NAME', 'MI_PRIVATE_KEY'],
+  huawei: ['HW_CLIENT_ID', 'HW_CLIENT_SECRET', 'HW_APP_ID'],
+  oppo: ['OPPO_CLIENT_ID', 'OPPO_CLIENT_SECRET'],
+  vivo: ['VIVO_ACCESS_KEY', 'VIVO_ACCESS_SECRET'],
+}
+
+function check(ok: boolean): CardStepState {
+  return ok ? 'done' : 'failed'
+}
 
 export function registerDoctorTool(runtime: PluginRuntime) {
   return defineTool({
@@ -37,8 +57,9 @@ export function registerDoctorTool(runtime: PluginRuntime) {
       schema: { type: 'object', additionalProperties: true },
       render: (_args, value) => [{
         type: 'text',
-        text: JSON.stringify(value, null, 2),
+        text: renderCardText((value as unknown as { card: ReleaseCard }).card),
       }],
+      presentationMeta: (_args, value) => (value as unknown as { card: ReleaseCard }).card,
     },
     presentCall: args => ({
       card: 'generic' as const,
@@ -90,17 +111,11 @@ export function registerDoctorTool(runtime: PluginRuntime) {
         ? args.stores.filter(s => profile.allowedStores.includes(s as never))
         : [...profile.allowedStores]
       const requiredKeys = new Set<string>()
-      const storeReq: Record<string, string[]> = {
-        yyb: ['YYB_USER_ID', 'YYB_ACCESS_SECRET', 'YYB_APP_ID'],
-        xiaomi: ['MI_USER_NAME', 'MI_PRIVATE_KEY'],
-        huawei: ['HW_CLIENT_ID', 'HW_CLIENT_SECRET', 'HW_APP_ID'],
-        oppo: ['OPPO_CLIENT_ID', 'OPPO_CLIENT_SECRET'],
-        vivo: ['VIVO_ACCESS_KEY', 'VIVO_ACCESS_SECRET'],
-      }
       for (const store of stores) {
-        for (const key of storeReq[store] ?? []) requiredKeys.add(key)
+        for (const key of STORE_REQUIRED[store] ?? []) requiredKeys.add(key)
       }
       const credentials = []
+      const configuredByKey = new Map<string, boolean>()
       for (const envKey of profileCredentialKeys(profile)) {
         const refName = profile.credentialRefs[envKey] ?? ''
         const info = await ctx.credentials.describe(credentialRef(refName))
@@ -112,10 +127,23 @@ export function registerDoctorTool(runtime: PluginRuntime) {
           writable: info.writable,
           requiredForSelection: requiredKeys.has(envKey),
         })
+        configuredByKey.set(envKey, info.configured)
         if (requiredKeys.has(envKey) && !info.configured) {
           issues.push(`必需凭据 ${envKey}（ref ${refName ?? '?'}）未配置`)
         }
       }
+
+      // Per-store credential readiness, so the card can show five chips.
+      const storeChecks: CardStore[] = stores.map(store => {
+        const keys = STORE_REQUIRED[store] ?? []
+        const ready = keys.filter(key => configuredByKey.get(key) === true).length
+        return {
+          id: store,
+          name: storeName(store),
+          state: ready === keys.length ? 'success' : 'failed',
+          detail: `${String(ready)}/${String(keys.length)} 凭据`,
+        }
+      })
 
       // Path checks for path-like plainEnv values.
       for (const [key, value] of Object.entries(profile.plainEnv)) {
@@ -151,6 +179,33 @@ export function registerDoctorTool(runtime: PluginRuntime) {
       }
 
       const ok = issues.length === 0
+      const state: CardState = ok ? 'ok' : 'failed'
+      const card: ReleaseCard = {
+        v: 1,
+        title: 'Android 发布环境体检',
+        subtitle: `${profile.displayName} (${profile.id})`,
+        state,
+        badge: ok ? '通过' : `${String(issues.length)} 项待修复`,
+        facts: [
+          { label: '平台', value: process.platform },
+          { label: 'Python', value: pythonVersion || '未知' },
+          { label: '项目根目录', value: projectRoot },
+          ...(preflight === null
+            ? []
+            : [{ label: '网络预检', value: `exit ${String(preflight['exitCode'])}` }]),
+        ],
+        steps: [
+          { label: 'Python 运行时', state: check(py.exitCode === 0) },
+          { label: 'Python 依赖', state: check(depsOk) },
+          { label: 'Java', state: check(javaOk) },
+          { label: 'Gradle wrapper', state: check(gradleOk) },
+          { label: '构建工具', state: check(buildToolsOk) },
+        ],
+        stores: storeChecks,
+        warnings: [...warnings, ...issues],
+        ...(ok ? {} : { notes: ['修复后重新运行 android_publish_doctor。'] }),
+      }
+
       return {
         ok,
         profileId: profile.id,
@@ -163,6 +218,7 @@ export function registerDoctorTool(runtime: PluginRuntime) {
         preflight,
         issues,
         warnings,
+        card,
       }
     },
   })
