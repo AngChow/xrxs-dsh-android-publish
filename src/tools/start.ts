@@ -139,8 +139,12 @@ export function registerStartTool(runtime: PluginRuntime) {
             : '确认开始打包任务吗？（应用宝 dry-run 会上传但不提审）',
           detail: renderMarkdownPlan(request, warnings),
           options: [{ label: approveLabel }, { label: REJECT_LABEL }],
+          // `plan-review` is the only intent kind understood by both 0.2.1-rc.5 and
+          // 0.2.2-alpha.2 (`approval` was introduced in 0.2.2). The verdict stays
+          // fail-closed either way: only the approve label grants, everything else
+          // (including no selection) is treated as a refusal.
           intent: isSubmit
-            ? { kind: 'approval', approve: approveLabel, reject: REJECT_LABEL }
+            ? { kind: 'plan-review', approve: approveLabel }
             : undefined,
         }],
       })
