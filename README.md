@@ -137,9 +137,14 @@ Python 依赖（requests / pycryptodome / cryptography）需在目标解释器�
 
 ## 资源与体积
 
-- `resources/tools/buglyqq-upload-symbol.jar` 是腾讯 Bugly 官方符号表上传工具，仅在使用 Bugly 符号表上传时运行（依据 `requireBugly` / 请求的 needBugly 开关）。
-- 该 jar 约 32 MB，占发布产物 **99% 以上**体积（`lib/index.js` 仅约 52 KB）；缺失时 `upload_bugly_symbol.py` 会报告 `buglyqq-upload-symbol.jar 不存在`，是否阻断由 `requireBugly` 决定。
-- 计划后续迁至 Release 附件、首次使用时下载缓存，以缩小仓库与产物体积。
+- `lib/index.js` 约 52 KB，**发布产物本身不到 200 KB**。
+- 腾讯 Bugly 官方符号表上传工具（`buglyqq-upload-symbol.jar`，约 32 MB）**不随包分发**，托管在
+  [`tools-v1` Release](https://github.com/AngChow/xrxs-dsh-android-publish/releases/tag/tools-v1)。
+- 首次执行 Bugly 符号表上传时，`upload_bugly_symbol.py` 会自动下载并校验 SHA256
+  （`351273b8…e15f68`），写入 `resources/tools/`；该目录不可写时退回
+  `$XDG_CACHE_HOME/xrxs-dsh/tools/`（默认 `~/.cache`）。
+- 下载失败或校验不一致视为「无法获得 jar」：`requireBugly: true` 时阻断提审，否则跳过。
+- 已持有本地 jar 时可用 `BUGLY_JAR_PATH` 指定以跳过下载；`BUGLY_JAR_URL` 可覆盖下载源。
 
 ## 与实施方案的已记录偏差（按 DSH `0.2.1-rc.5` / `0.2.2-alpha.2` 源码适配）
 

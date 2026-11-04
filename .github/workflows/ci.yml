@@ -52,3 +52,15 @@ jobs:
             }
             console.log("ok: no @deepseek-ai runtime dependencies");
           ' "$T"
+
+      - name: Verify artifact stays small (large tools are release assets, not packed)
+        run: |
+          T=$(ls /tmp/pack/*.tgz | head -1)
+          BYTES=$(wc -c < "$T" | tr -d ' ')
+          LIMIT=2000000
+          echo "tarball: $T"
+          echo "bytes:   $BYTES (limit $LIMIT)"
+          if [ "$BYTES" -gt "$LIMIT" ]; then
+            echo "FATAL: tarball exceeds limit; host large binaries as release assets instead of packing them"
+            exit 1
+          fi

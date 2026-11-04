@@ -34,7 +34,10 @@
     "lib/types/**/*.d.ts",
     "cordis.patch.yml",
     "README.md",
-    "resources/**/*"
+    "resources/scripts/**/*",
+    "resources/python/**/*",
+    "resources/vendor/**/*",
+    "resources/requirements.txt"
   ],
   "engines": {
     "dsh": ">=0.2.1-rc.5 <0.3.0"

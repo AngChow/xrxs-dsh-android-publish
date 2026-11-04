@@ -13,6 +13,10 @@
 
 ### 仓库
 
+- **32MB 的 Bugly 工具 jar 移出仓库与产物**：改由
+  [`tools-v1` Release](https://github.com/AngChow/xrxs-dsh-android-publish/releases/tag/tools-v1)
+  托管，`upload_bugly_symbol.py` 首次使用时下载并校验 SHA256。产物从 ~30MB 降到 200KB 以内；
+  `.gitignore` 排除该 jar，`files` 白名单不再包含 `resources/tools/`。
 - 新增 GitHub Actions CI：`typecheck` + `test` + `build`。
 - CI 增加产物校验：`@deepseek-ai/*` 不得出现在 `dependencies` 中。
   这类包必须由宿主提供；一旦被复制进 profile 的 `node_modules`，

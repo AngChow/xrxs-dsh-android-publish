@@ -5,3 +5,7 @@ dist/
 .DS_Store
 *.log
 coverage/
+
+# 32MB 第三方工具 jar：托管在 tools-v1 Release，运行时按需下载
+resources/tools/*.jar
+resources/tools/*.jar.part

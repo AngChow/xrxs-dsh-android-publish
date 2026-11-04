@@ -16,7 +16,9 @@
 import sys
 import os
 import re
+import hashlib
 import subprocess
+import urllib.request
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -28,6 +30,66 @@ from _yyb_common import log, load_env  # noqa: E402
 MAPPING_REL_PATH = "app/build/outputs/mapping/release/mapping.txt"
 # 默认使用 skill 内的 jar
 DEFAULT_JAR_PATH = str(Path(__file__).resolve().parent.parent / "tools" / "buglyqq-upload-symbol.jar")
+
+# jar 约 32MB，不随发布包分发；缺失时从本仓库 Release 按需下载并校验。
+JAR_URL = os.environ.get(
+    "BUGLY_JAR_URL",
+    "https://github.com/AngChow/xrxs-dsh-android-publish/releases/download/tools-v1/buglyqq-upload-symbol.jar",
+)
+JAR_SHA256 = "351273b825254d2c2a83bcb5761ef908b1a1b278f54ee018d9555b5381e15f68"
+
+
+def _sha256_of(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _cache_dir():
+    base = os.environ.get("XDG_CACHE_HOME") or os.path.join(os.path.expanduser("~"), ".cache")
+    return os.path.join(base, "xrxs-dsh", "tools")
+
+
+def ensure_bugly_jar(jar_path):
+    """返回可用的 jar 路径；缺失时下载并校验 SHA256。
+
+    优先尝试写回插件目录旁的 resources/tools/；该目录不可写时退到用户缓存目录。
+    返回 None 表示无法获得可用 jar（调用方应视为失败）。
+    """
+    if os.path.isfile(jar_path):
+        return jar_path
+
+    for target in (jar_path, os.path.join(_cache_dir(), os.path.basename(jar_path))):
+        part = target + ".part"
+        try:
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            log(f"buglyqq-upload-symbol.jar 缺失，开始下载: {JAR_URL}", "WARN")
+            downloaded = 0
+            with urllib.request.urlopen(JAR_URL, timeout=180) as resp, open(part, "wb") as out:
+                while True:
+                    chunk = resp.read(1024 * 256)
+                    if not chunk:
+                        break
+                    out.write(chunk)
+                    downloaded += len(chunk)
+            actual = _sha256_of(part)
+            if actual != JAR_SHA256:
+                os.remove(part)
+                log(f"jar 校验失败: 期望 {JAR_SHA256}, 实际 {actual}", "ERROR")
+                continue
+            os.replace(part, target)
+            log(f"jar 已下载并通过校验 ({downloaded / 1024 / 1024:.1f} MB): {target}", "OK")
+            return target
+        except Exception as exc:  # noqa: BLE001 - 任何下载/IO 失败都退到下一个候选目录
+            log(f"下载 jar 失败 ({target}): {exc}", "ERROR")
+            try:
+                if os.path.exists(part):
+                    os.remove(part)
+            except OSError:
+                pass
+    return None
 
 
 def get_version_name(project_root):
@@ -73,9 +135,10 @@ def main():
         log("缺少 YYB_PKG_NAME (用作 bundleid)", "WARN")
         sys.exit(0)
 
-    # 检查 jar 是否存在
-    if not os.path.isfile(jar_path):
-        log(f"buglyqq-upload-symbol.jar 不存在: {jar_path}", "ERROR")
+    # jar 不随包分发，缺失时按需下载（带 SHA256 校验）
+    jar_path = ensure_bugly_jar(jar_path)
+    if not jar_path:
+        log("无法获得 buglyqq-upload-symbol.jar，中止符号表上传", "ERROR")
         sys.exit(1)
 
     # 检查 mapping.txt
