@@ -1,8 +1,11 @@
 # xrxs-dsh-android-publish
 
+[![ci](https://github.com/AngChow/xrxs-dsh-android-publish/actions/workflows/ci.yml/badge.svg)](https://github.com/AngChow/xrxs-dsh-android-publish/actions/workflows/ci.yml)
+
 DeepSeek Harness (DSH) 插件：把 `android-publish` Codex skill 的 Android 发布流水线（打包 → Bugly 符号表 → 360 加固 → 应用宝/小米/华为/OPPO/vivo 提审）以安全、可审计的方式暴露给 DSH Agent。
 
-- 目标 DSH 版本：`>=0.2.2-alpha.2 <0.3.0`（engines.dsh）
+- 目标 DSH 版本：`>=0.2.1-rc.5 <0.3.0`（`engines.dsh`）
+- 同一份源码同时兼容 `0.2.1-rc.5` 与 `0.2.2-alpha.2`，CI 以最低支持版本做类型检查
 - 首发平台：**macOS**（生产提审仅限 darwin；Windows 不支持）
 - 完整实施方案见原始文档 `xrxs-dsh-android-publish-implementation-plan.md`
 
@@ -27,20 +30,58 @@ DeepSeek Harness (DSH) 插件：把 `android-publish` Codex skill 的 Android �
 
 ## 安装
 
+`lib/` 构建产物不入库。请从 [Releases](https://github.com/AngChow/xrxs-dsh-android-publish/releases) 下载 `xrxs-dsh-android-publish-<version>.tgz`，或自行构建：
+
 ```bash
-# 打包
-pnpm install && pnpm build && pnpm pack
+pnpm install
+pnpm pack            # 产物在仓库根目录，文件名含版本号
+```
 
-# 安装到独立 profile（路径或 tgz 必须是绝对路径）
-dsh plugin --profile android-publish add /absolute/path/to/xrxs-dsh-android-publish-0.1.0.tgz
+### 桌面版 DSH（已在 `0.2.1-rc.5` 验证）
 
-# 注意：profile 必须先基于 web 模板创建（否则 bundles 里没有 web app 本体）：
+桌面版**没有** `dsh` CLI（`Contents/Resources/runtime/bin` 下只有 `node`），需直接改 profile。编辑 `~/.dsh/profiles/desktop/package.json`：
+
+```json
+{
+  "dependencies": {
+    "xrxs-dsh-android-publish": "file:/absolute/path/to/xrxs-dsh-android-publish-0.1.1.tgz"
+  },
+  "dsh": {
+    "profile": {
+      "bundles": [
+        "@deepseek-ai/dsh-base",
+        "@deepseek-ai/dsh-web-app",
+        "xrxs-dsh-android-publish"
+      ]
+    }
+  }
+}
+```
+
+在该 profile 目录执行安装，然后**完全退出并重开 App**：
+
+```bash
+cd ~/.dsh/profiles/desktop && pnpm install
+ls node_modules            # 应只有 xrxs-dsh-android-publish
+```
+
+> ⚠️ `@deepseek-ai/dsh-*` **绝不能**出现在本插件的 `dependencies` 里，它们必须由宿主提供。
+> 一旦这些包被复制进 profile 的 `node_modules`，进程内会出现两份
+> `TOOL_RUNTIME_SCHEDULER` Symbol，注册与查找用的不是同一个对象，
+> 结果是该 DSH 实例下**所有**工具调用立即失败（`Cannot read properties of undefined (reading 'prepare')`）。
+> CI 中有一道专门校验在防止这个回归。
+
+### CLI 版
+
+以下命令沿用原方案文档，本次未在桌面版环境验证：
+
+```bash
+# profile 需先基于 web 模板创建，否则 bundles 里没有 web app 本体
 dsh --profile android-publish --from-default-profile web --dump-config
 
-# 检查组合
-dsh --profile android-publish --dump-config
+dsh plugin --profile android-publish add /absolute/path/to/xrxs-dsh-android-publish-<version>.tgz
 
-# 启动
+dsh --profile android-publish --dump-config       # 检查组合
 dsh --profile android-publish --no-open --port 3080
 ```
 
@@ -94,7 +135,13 @@ Python 依赖（requests / pycryptodome / cryptography）需在目标解释器�
 - 不自动重试失败的渠道；由人决策。
 - 生产提审不允许 `all` 渠道，必须显式列出。
 
-## 与实施方案的已记录偏差（按 DSH 0.2.2-alpha.2 源码适配）
+## 资源与体积
+
+- `resources/tools/buglyqq-upload-symbol.jar` 是腾讯 Bugly 官方符号表上传工具，仅在使用 Bugly 符号表上传时运行（依据 `requireBugly` / 请求的 needBugly 开关）。
+- 该 jar 约 32 MB，占发布产物 **99% 以上**体积（`lib/index.js` 仅约 52 KB）；缺失时 `upload_bugly_symbol.py` 会报告 `buglyqq-upload-symbol.jar 不存在`，是否阻断由 `requireBugly` 决定。
+- 计划后续迁至 Release 附件、首次使用时下载缓存，以缩小仓库与产物体积。
+
+## 与实施方案的已记录偏差（按 DSH `0.2.1-rc.5` / `0.2.2-alpha.2` 源码适配）
 
 1. `@deepseek-ai/cordis` 实际版本线为 4.x（当前配套 `>=4.0.5-alpha.1`），`@deepseek-ai/schemastery` 为 `>=3.18.5`；方案中的 `0.2.2-alpha.2` 只适用于 `@deepseek-ai/dsh-*` 系列。DSH 兼容性由 `engines.dsh` 单独决定（cordis peer 不参与该检查）。
 2. `ctx.jobs.start()` 直接返回 `JobId`；`{cancel, done}` 是 `run(job)` 返回的 `JobHooks`。
@@ -103,16 +150,18 @@ Python 依赖（requests / pycryptodome / cryptography）需在目标解释器�
 5. `ToolRunContext` 无 `sessionId` 字段；owner 会话经 `exec.agent.id`（`Agent.id` 即 SessionId）获取。
 6. 生产确认锁：脚本实际使用 `--i-know-this-submits-to-production` 派生的 `YYB_CONFIRM_SUBMIT` 等分渠道变量，而非方案所写的单一 `PUBLISH_CONFIRM_SUBMIT=YES` 环境变量；语义等价。
 7. 任务输出经 producer 侧 `job.append()` 泵入环形缓冲（250ms 轮询 runner stdout），脱敏后入环；未启用 subprocess spill 文件，第二份未脱敏全量输出不存在。
-8. `userQuestions` approval intent 的 approve/reject 标签必须出现在该问题 options 中（实现已满足）。
+8. 审批意图使用 `kind: 'plan-review'`（自 0.1.1 起）：该 kind 在 `0.2.1-rc.5` 与 `0.2.2-alpha.2` 中都存在，而 `kind: 'approval'` 自 `0.2.2` 才引入，用它会导致在 rc.5 上类型检查失败。裁决规则为「选中项等于 `approve` 标签才算批准，其余（含未选择）一律拒绝」，保持 fail-closed。
 9. `dsh bundle` patch 中增加 `platforms: [darwin]` 声明。
 
 ## 开发
 
 ```bash
 pnpm install
-npx tsc --noEmit   # 类型检查
-npx vitest run     # 30 个测试：配置校验/请求策略/命令构造/脱敏/runner 集成/dotenv 隔离
-npx tsdown         # 构建 lib/
+pnpm run typecheck   # tsc --noEmit
+pnpm test            # 30 个测试：tests/config.spec.ts、tests/request.spec.ts、tests/runner.spec.ts
+pnpm run build       # tsdown -> lib/
 ```
+
+> `submit` 路径受 `src/request.ts` 的 Darwin-only 守卫限制，因此 CI 在 `macos-latest` 上运行，而非 Linux。
 
 人工发布验收（对照真实商店测试账号）尚未执行，见实施方案 §21 清单。
