@@ -6,6 +6,7 @@
 
 import type { Context } from '@deepseek-ai/cordis'
 import '@deepseek-ai/dsh-subprocess'
+import '@deepseek-ai/dsh-system-prompt'
 import { Config, resolveConfig, type Config as ConfigShape } from './config.ts'
 import { createRuntime } from './runtime.ts'
 import { registerDoctorTool } from './tools/doctor.ts'

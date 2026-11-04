@@ -1,6 +1,6 @@
 {
   "name": "xrxs-dsh-android-publish",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "DSH 插件：以安全、可审计的方式执行 Android 打包与商店提审（应用宝 / 小米 / 华为 / OPPO / vivo），凭据全程脱敏并强制人工审批",
   "license": "MIT",
@@ -33,6 +33,7 @@
     "./client": "./lib/client.js"
   },
   "files": [
+    "lib",
     "lib/index.js",
     "lib/client.js",
     "lib/types/**/*.d.ts",
@@ -46,14 +47,15 @@
     "resources/requirements.txt"
   ],
   "engines": {
-    "dsh": ">=0.2.1-rc.5 <0.3.0"
+    "dsh": ">=0.2.0-rc.1 <0.3.0-0"
   },
   "scripts": {
     "build": "tsdown && node scripts/build-client.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "prepare": "pnpm run build",
-    "build:client": "node scripts/build-client.mjs"
+    "build:client": "node scripts/build-client.mjs",
+    "prepack": "pnpm run build"
   },
   "dsh": {
     "bundle": {
@@ -71,24 +73,24 @@
     }
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": ">=4.0.5-alpha.1",
-    "@deepseek-ai/dsh-credentials": ">=0.2.1-rc.5 <0.3.0",
-    "@deepseek-ai/dsh-jobs": ">=0.2.1-rc.5 <0.3.0",
-    "@deepseek-ai/dsh-subprocess": ">=0.2.1-rc.5 <0.3.0",
-    "@deepseek-ai/dsh-system-prompt": ">=0.2.1-rc.5 <0.3.0",
-    "@deepseek-ai/dsh-tools": ">=0.2.1-rc.5 <0.3.0",
-    "@deepseek-ai/dsh-user-questions": ">=0.2.1-rc.5 <0.3.0",
-    "@deepseek-ai/schemastery": ">=3.18.5"
+    "@deepseek-ai/cordis": ">=4.0.4",
+    "@deepseek-ai/dsh-credentials": ">=0.2.0-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-jobs": ">=0.2.0-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-subprocess": ">=0.2.0-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-system-prompt": ">=0.2.0-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-tools": ">=0.2.0-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-user-questions": ">=0.2.0-rc.1 <0.3.0-0",
+    "@deepseek-ai/schemastery": ">=3.18.4"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "4.0.6-alpha.1",
-    "@deepseek-ai/dsh-credentials": "0.2.1-rc.5",
-    "@deepseek-ai/dsh-jobs": "0.2.1-rc.5",
-    "@deepseek-ai/dsh-subprocess": "0.2.1-rc.5",
-    "@deepseek-ai/dsh-system-prompt": "0.2.1-rc.5",
-    "@deepseek-ai/dsh-tools": "0.2.1-rc.5",
-    "@deepseek-ai/dsh-user-questions": "0.2.1-rc.5",
-    "@deepseek-ai/schemastery": "3.18.5",
+    "@deepseek-ai/cordis": "4.0.4",
+    "@deepseek-ai/dsh-credentials": "0.2.0-rc.1",
+    "@deepseek-ai/dsh-jobs": "0.2.0-rc.1",
+    "@deepseek-ai/dsh-subprocess": "0.2.0-rc.1",
+    "@deepseek-ai/dsh-system-prompt": "0.2.0-rc.1",
+    "@deepseek-ai/dsh-tools": "0.2.0-rc.1",
+    "@deepseek-ai/dsh-user-questions": "0.2.0-rc.1",
+    "@deepseek-ai/schemastery": "3.18.4",
     "@types/node": "^22.20.1",
     "tsdown": "^0.22.2",
     "typescript": "^5.6.0",

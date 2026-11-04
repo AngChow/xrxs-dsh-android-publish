@@ -4,8 +4,9 @@
 
 DeepSeek Harness (DSH) 插件：把 `android-publish` Codex skill 的 Android 发布流水线（打包 → Bugly 符号表 → 360 加固 → 应用宝/小米/华为/OPPO/vivo 提审）以安全、可审计的方式暴露给 DSH Agent。
 
-- 目标 DSH 版本：`>=0.2.1-rc.5 <0.3.0`（`engines.dsh`）
-- 同一份源码同时兼容 `0.2.1-rc.5` 与 `0.2.2-alpha.2`，CI 以最低支持版本做类型检查
+- 目标 DSH 版本：`>=0.2.0-rc.1 <0.3.0-0`（`engines.dsh`）；上界用 `<0.3.0-0` 是因为宿主按
+  `semver.satisfies(..., { includePrerelease: true })` 判定，写 `<0.3.0` 会把 `0.3.0-rc.1` 也放进来
+- 同一份源码在 `0.2.0-rc.1` / `0.2.1-rc.5` / `0.2.2-alpha.2` 上类型检查通过，CI 以最低支持版本（`0.2.0-rc.1`）做类型检查
 - 首发平台：**macOS**（生产提审仅限 darwin；Windows 不支持）
 - 完整实施方案见原始文档 `xrxs-dsh-android-publish-implementation-plan.md`
 
@@ -159,9 +160,9 @@ Python 依赖（requests / pycryptodome / cryptography）需在目标解释器�
 - 下载失败或校验不一致视为「无法获得 jar」：`requireBugly: true` 时阻断提审，否则跳过。
 - 已持有本地 jar 时可用 `BUGLY_JAR_PATH` 指定以跳过下载；`BUGLY_JAR_URL` 可覆盖下载源。
 
-## 与实施方案的已记录偏差（按 DSH `0.2.1-rc.5` / `0.2.2-alpha.2` 源码适配）
+## 与实施方案的已记录偏差（按 DSH `0.2.0-rc.1` / `0.2.1-rc.5` / `0.2.2-alpha.2` 源码适配）
 
-1. `@deepseek-ai/cordis` 实际版本线为 4.x（当前配套 `>=4.0.5-alpha.1`），`@deepseek-ai/schemastery` 为 `>=3.18.5`；方案中的 `0.2.2-alpha.2` 只适用于 `@deepseek-ai/dsh-*` 系列。DSH 兼容性由 `engines.dsh` 单独决定（cordis peer 不参与该检查）。
+1. `@deepseek-ai/cordis` 实际版本线为 4.x（`0.2.0-rc.1`/`rc.2` 配套 4.0.4，`0.2.1-rc.x` 配套 4.0.5，peer 声明为 `>=4.0.4`），`@deepseek-ai/schemastery` 为 `>=3.18.4`；方案中的 `0.2.2-alpha.2` 只适用于 `@deepseek-ai/dsh-*` 系列。DSH 兼容性由 `engines.dsh` 单独决定（cordis peer 不参与该检查）。
 2. `ctx.jobs.start()` 直接返回 `JobId`；`{cancel, done}` 是 `run(job)` 返回的 `JobHooks`。
 3. `ctx.credentials.resolve()` 未配置时返回 `undefined`（不是空对象）；local provider 的 source 取值为 `file` / `env` / `project-env` / `user-env`。
 4. `ctx.jobs.readAt(id, from, caller)` 的第二参是流偏移；读取结果字段为 `next`（非 `nextOffset`），且 `readAt` 不返回 producer result（result 只在 `read()` 结算后给出一次）。

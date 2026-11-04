@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.2.1
+
+放宽 DSH 版本下界（无需任何新版本特性，纯声明与一处类型补全）：
+
+- `engines.dsh` 由 `>=0.2.1-rc.5 <0.3.0` 改为 `>=0.2.0-rc.1 <0.3.0-0`，覆盖整个 `0.2.x` 线。
+  宿主用 `semver.satisfies(version, range, { includePrerelease: true })` 判定（见
+  `@deepseek-ai/dsh-app-boot` 的 `evaluatePluginCompatibility`），因此旧的 `>=0.2.1-rc.5`
+  会把 `0.2.1-rc.1`～`0.2.1-rc.4`、`0.2.0-rc.1`/`rc.2` 这些已发布版本一律判为不兼容。
+- 上界改为 `<0.3.0-0`：`includePrerelease` 下 `<0.3.0` 会放行 `0.3.0-rc.1`，与「未验证 0.3」矛盾。
+- `peerDependencies` 同步放宽到 `>=0.2.0-rc.1 <0.3.0-0`，`@deepseek-ai/cordis` 降到 `>=4.0.4`
+  （`0.2.0-rc.1`/`rc.2` 配套 4.0.4，`0.2.1-rc.x` 配套 4.0.5），`@deepseek-ai/schemastery` 降到 `>=3.18.4`。
+- `src/index.ts` 补 `import '@deepseek-ai/dsh-system-prompt'`：`ctx.systemPrompt` 的 Context 声明来自
+  该包的模块增强，旧版 `dsh-tools` 不再间接引入它，缺这行时 `0.2.0-rc.1`/`rc.2` 下 `tsc` 报
+  `Property 'systemPrompt' does not exist on type 'Context'`。
+- `devDependencies` 下移到最低支持版本，CI 的类型检查即等价于下界回归。
+- 无行为变更：`defineTool`（`presentCall` / `output.presentationMeta` / `exec.signal`）、
+  `ctx.jobs`、`ctx.credentials`、`ctx.userQuestions.ask` 的 `plan-review` 意图、`ctx.subprocess.spawn`、
+  `tool.call.toolview` 槽位与 `block.meta` 在 `0.2.0-rc.1` 都已存在，接口形状一致。
+
 ## 0.2.0
 
 发布卡片与审批体验升级（Host 半身重做 + 新增 Web 客户端半身）：
