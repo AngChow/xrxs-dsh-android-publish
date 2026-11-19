@@ -28,7 +28,7 @@
       "default": "./lib/index.js"
     },
     "./locale/*.json": "./locale/*.json",
-    "./icon": "./icon.svg",
+    "./icon": "./icon.png",
     "./package.json": "./package.json",
     "./client": "./lib/client.js"
   },
@@ -39,12 +39,12 @@
     "lib/types/**/*.d.ts",
     "cordis.patch.yml",
     "README.md",
-    "icon.svg",
     "locale/*.json",
     "resources/scripts/**/*",
     "resources/python/**/*",
     "resources/vendor/**/*",
-    "resources/requirements.txt"
+    "resources/requirements.txt",
+    "icon.png"
   ],
   "engines": {
     "dsh": ">=0.2.0-rc.1 <0.3.0-0"
