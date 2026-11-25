@@ -1,6 +1,6 @@
 {
   "name": "xrxs-dsh-android-publish",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "DSH 插件：以安全、可审计的方式执行 Android 打包与商店提审（应用宝 / 小米 / 华为 / OPPO / vivo），凭据全程脱敏并强制人工审批",
   "license": "MIT",

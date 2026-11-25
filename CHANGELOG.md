@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.2
+
+修复两个会让发布流程走不下去的 bug（无行为变更，审批卡与策略闸门不变）：
+
+- **脚本路径**：`pre_check.py` / `build_and_submit.py` 原先以裸文件名交给 Python，且 cwd 设为
+  `projectRoot`；项目里没有这些脚本时预检直接 `can't open file ... (exit 2)`，按设计永远不会
+  请求审批。改为解析插件内置 `resources/scripts` 的绝对路径（`start` / `preflight` / `doctor` /
+  `request` 四处）。脚本内部的子进程调用本就用 `SCRIPT_DIR`，无需改动。
+- **`android_publish_plan` 返回非法 JSON**：`credentialPreview` 条目里的 `source` / `writable` /
+  `issue` 可能是 `undefined`，宿主序列化报 `value is not lossless JSON`，计划卡片永远出不来。
+  改为有值才赋值。
+- `.gitignore` 补充 `__pycache__/` 与 `*.pyc`。
+
 ## 0.2.1
 
 放宽 DSH 版本下界（无需任何新版本特性，纯声明与一处类型补全）：
