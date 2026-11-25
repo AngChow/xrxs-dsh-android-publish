@@ -17,7 +17,7 @@ import {
 } from '../card.ts'
 import { resolveEnv, secretEnvKeys } from '../env.ts'
 import { createRedactor } from '../redact.ts'
-import { runThroughRunner, startRunnerJob } from '../runner.ts'
+import { runThroughRunner, scriptsDir, startRunnerJob } from '../runner.ts'
 import {
   buildChildArgv,
   normalizeRequest,
@@ -109,7 +109,7 @@ export function registerStartTool(runtime: PluginRuntime) {
 
       // Preflight always runs before approval.
       const preflight = await runThroughRunner(ctx, {
-        childArgv: [path.join('pre_check.py'), request.projectRoot],
+        childArgv: [path.join(scriptsDir, 'pre_check.py'), request.projectRoot],
         pythonExecutable: config.pythonExecutable,
         label: `preflight-${planId}`,
         logDir: path.join(auditDir, 'logs'),

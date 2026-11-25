@@ -88,14 +88,16 @@ export async function describeCredentialPreview(
   const preview: CredentialStatus[] = []
   for (const [envKey, refName] of Object.entries(profile.credentialRefs)) {
     const info = await ctx.credentials.describe(credentialRef(refName))
-    preview.push({
+    // Tool outputs must stay lossless JSON: never emit `undefined` fields.
+    const status: CredentialStatus = {
       envKey,
       credentialRef: refName,
       configured: info.configured,
-      source: info.source,
-      writable: info.writable,
-      issue: info.configured ? undefined : 'missing',
-    })
+    }
+    if (info.source !== undefined) status.source = info.source
+    if (info.writable !== undefined) status.writable = info.writable
+    if (!info.configured) status.issue = 'missing'
+    preview.push(status)
   }
   return preview
 }

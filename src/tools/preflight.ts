@@ -10,7 +10,7 @@ import { renderCardText, storeNames, tail, type ReleaseCard } from '../card.ts'
 import { getProfile } from '../config.ts'
 import { resolveEnv, secretEnvKeys } from '../env.ts'
 import { createRedactor } from '../redact.ts'
-import { runThroughRunner } from '../runner.ts'
+import { runThroughRunner, scriptsDir } from '../runner.ts'
 import { canonicalize } from '../paths.ts'
 import { appendAudit } from '../audit.ts'
 import { runtimeDirFor, toolError, type PluginRuntime } from '../runtime.ts'
@@ -58,7 +58,7 @@ export function registerPreflightTool(runtime: PluginRuntime) {
 
       const redactor = createRedactor(resolution.secretValues)
       const result = await runThroughRunner(runtime.ctx, {
-        childArgv: [path.join('pre_check.py'), projectRoot],
+        childArgv: [path.join(scriptsDir, 'pre_check.py'), projectRoot],
         pythonExecutable: runtime.config.pythonExecutable,
         label: 'preflight',
         logDir: path.join(runtimeDirFor(runtime, profile), 'logs'),

@@ -16,6 +16,7 @@ import {
 import { canonicalize, isInside, requireAbsolute } from './paths.ts'
 import { requiredKeysFor } from './env.ts'
 import { storeName } from './card.ts'
+import { scriptsDir } from './runner.ts'
 import { toolError, type PluginRuntime } from './runtime.ts'
 
 export type PublishMode = 'packageOnly' | 'submit'
@@ -175,7 +176,7 @@ export function packageOnlySkippedStores(stores: readonly AndroidStore[]): Andro
  * passes arbitrary skip flags; everything here is policy-derived.
  */
 export function buildChildArgv(request: PublishRequest): string[] {
-  const argv: string[] = [path.join('build_and_submit.py')]
+  const argv: string[] = [path.join(scriptsDir, 'build_and_submit.py')]
   for (const store of request.stores) argv.push('--store', store)
 
   if (request.mode === 'packageOnly') {

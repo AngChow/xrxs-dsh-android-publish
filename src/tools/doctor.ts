@@ -18,7 +18,7 @@ import {
 } from '../card.ts'
 import { getProfile, PATH_LIKE_ENV_KEYS } from '../config.ts'
 import { profileCredentialKeys } from '../env.ts'
-import { runQuick } from '../runner.ts'
+import { runQuick, scriptsDir } from '../runner.ts'
 import { canonicalize } from '../paths.ts'
 import { toolError, type PluginRuntime } from '../runtime.ts'
 
@@ -163,7 +163,7 @@ export function registerDoctorTool(runtime: PluginRuntime) {
         warnings.push(...resolution.warnings)
         const redactor = createRedactor(resolution.secretValues)
         const result = await runThroughRunner(runtime.ctx, {
-          childArgv: [path.join('pre_check.py'), projectRoot],
+          childArgv: [path.join(scriptsDir, 'pre_check.py'), projectRoot],
           pythonExecutable: runtime.config.pythonExecutable,
           label: 'doctor-precheck',
           logDir: path.join(runtime.defaultRuntimeDir, profile.id, 'logs'),
